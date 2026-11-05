@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VAI PITANGA - Créditos e Especificações</title>
+    <style>
+        :root {
+            --primary: #2c3e50; 
+            --accent: #27ae60; 
+            --alert: #e74c3c;
+            --dark: #1a1a1a; 
+            --text: #ecf0f1; 
+            --highlight: #f1c40f;
+            --card-bg: #222d38;
+            --border: #34495e;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--dark);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: var(--primary);
+            border-bottom: 2px solid var(--highlight);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand-header {
+            background: var(--highlight);
+            color: #000;
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-weight: 900;
+            font-size: 20px;
+            letter-spacing: 1px;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: 1px solid var(--highlight);
+            color: var(--highlight);
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+
+        .nav-btn:hover {
+            background: var(--highlight);
+            color: #000;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 30px 20px;
+            width: 100%;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--highlight);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+
+        /* GRID DA EQUIPE */
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+        .team-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--highlight);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: middle;
+        }
+
+        /* FORMATAÇÃO UNIFORME DAS FOTOS DOS MEMBROS */
+        .team-card img {
+            width: 150px;               /* Largura fixa */
+            height: 150px;              /* Altura fixa */
+            object-fit: cover;          /* Preenche o espaço mantendo a proporção sem esticar */
+            border-radius: 8px;         /* Define o formato circular*/
+            margin-bottom: 12px;
+            margin-top: 5px;
+        }
+
+        .team-card h3 {
+            margin: 0 0 5px 0;
+            font-size: 16px;
+            color: #fff;
+        }
+
+        .team-card p {
+            margin: 0;
+            font-size: 11px;
+            color: #95a5a6;
+            text-transform: uppercase;
+        }
+
+        /* SCHEMATIC DO DRONE */
+        .drone-blueprint {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 40px;
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 25px;
+            align-items: center;
+        }
+
+        @media (max-width: 850px) {
+            .drone-blueprint { grid-template-columns: 1fr; }
+        }
+
+        .drone-display {
+            background: #111;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        .drone-display img {
+            width: 100%;
+            height: auto;
+            display: block;
+            object-fit: cover;
+        }
+
+        .specs-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            font-size: 13px;
+            line-height: 2.2;
+        }
+
+        .specs-list li {
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .specs-list span { color: var(--highlight); font-weight: bold; text-align: right; }
+
+        /* TABELA DE COMPONENTES */
+        .parts-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .parts-table th, .parts-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .parts-table th {
+            background: rgba(0,0,0,0.3);
+            color: var(--highlight);
+            text-transform: uppercase;
+            font-size: 11px;
+        }
+
+        .parts-table tr:hover { background: rgba(255,255,255,0.02); }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand-header">VAI PITANGA</div>
+        <a href="index.html" class="nav-btn">⬅ CENTRO DE COMANDO</a>
+    </header>
+
+    <div class="container">
+
+        <!-- EQUIPE -->
+        <div class="section-title">👥 Equipe de Desenvolvimento EPT</div>
+        <div class="team-grid">
+            <div class="team-card">
+                <h3>José</h3>
+                <p>Engenharia de Sistemas</p>
+                <img src = "/pessoinhas/jose.jpg" alt = "José" class = "team-avatar"></img>
+            </div>
+             <div class="team-card">
+                <h3>Emanuelly</h3>
+                <p>Engenharia de Software</p>
+                <img src = "/pessoinhas/emanuelly.jpg" alt = "Emanuelly" class = "team-avatar"></img>
+            </div>
+            <div class="team-card">
+                <h3>Lorena</h3>
+                <p>Gestão de Frota</p>
+                <img src = "/pessoinhas/lorena.jpg" alt = "Lorena" class = "team-avatar"></img>
+            </div>
+            <div class="team-card">
+                <h3>Matheus C.</h3>
+                <p>Desenvolvimento Frontend</p>
+                <img src = "/pessoinhas/matheuscheff.jpg" alt = "Matheus C." class = "team-avatar"></img>
+            </div>
+            <div class="team-card">
+                <h3>Thassila</h3>
+                <p>Análise de Dados / IA</p>
+                <img src = "/pessoinhas/thassila.jpg" alt = "Thassila" class = "team-avatar"></img>
+            </div>
+            <div class="team-card">
+                <h3>Matheus E.</h3>
+                <p>Operações de Campo</p>
+                <img src = "/pessoinhas/matheusem.jpg" alt = "Matheus E." class = "team-avatar"></img>
+            </div>
+        </div>
+
+        <!-- ESPECIFICAÇÕES DO DRONE -->
+        <div class="section-title">🛸 Modelo Operacional: VAI-PITANGA SOLAR V6</div>
+        <div class="drone-blueprint">
+            <div class="drone-display">
+                <img src="/gifs/dronedesign.jpg" alt="Design do Drone VAI-PITANGA com especificações">
+            </div>
+            <div>
+                <h3 style="color: #fff; margin-top: 0;">Ficha Técnica Simplificada</h3>
+                <ul class="specs-list">
+                    <li>Chassi Base <span>DJI Mini 3</span></li>
+                    <li>Fonte Solar <span>Painel Resun 100W</span></li>
+                    <li>Bateria Auxiliar <span>LiFePO4 12V 20Ah</span></li>
+                    <li>Controlador de Carga <span>Epower MPPT 20A</span></li>
+                    <li>Alimentação USB <span>Conversor USB-C PD 30W</span></li>
+                    <li>Sensor Térmico Interno <span>DS18B20</span></li>
+                    <li>Visão Noturna / FPV <span>Infravermelho 256x192</span></li>
+                    <li>Sensor Principal <span>Câmera Térmica Dedicada</span></li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- PEÇAS E COMPONENTES -->
+        <div class="section-title">🧩 Componentes e Hardware Integrado</div>
+        <table class="parts-table">
+            <thead>
+                <tr>
+                    <th>Componente</th>
+                    <th>Especificação Modelo</th>
+                    <th>Função no Sistema</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Painel Solar</strong></td>
+                    <td>Resun 100W</td>
+                    <td>Captação fotovoltaica para recarga contínua em campo</td>
+                </tr>
+                <tr>
+                    <td><strong>Bateria</strong></td>
+                    <td>LiFePO4 12V 20Ah</td>
+                    <td>Armazenamento de energia de alta eficiência e segurança química</td>
+                </tr>
+                <tr>
+                    <td><strong>Controlador de Carga</strong></td>
+                    <td>Epower MPPT 20A</td>
+                    <td>Gestão inteligente de energia fotovoltaica e proteção contra sobrecarga</td>
+                </tr>
+                <tr>
+                    <td><strong>Conversor de Potência</strong></td>
+                    <td>Conversor USB-C PD 30W</td>
+                    <td>Alimentação regulada de 30W para módulos auxiliares e sensores embarcados</td>
+                </tr>
+                <tr>
+                    <td><strong>Sensor de Temperatura</strong></td>
+                    <td>DS18B20</td>
+                    <td>Monitoramento térmico contínuo do chassi e baterias</td>
+                </tr>
+                <tr>
+                    <td><strong>Chassis / Propulsão</strong></td>
+                    <td>Drone DJI Mini 3</td>
+                    <td>Estrutura aerodinâmica leve, motores brushless e sistema de voo principal</td>
+                </tr>
+                <tr>
+                    <td><strong>Câmera Infravermelho</strong></td>
+                    <td>FPV 256x192</td>
+                    <td>Transmissão de imagens infravermelhas em tempo real para o operador</td>
+                </tr>
+                <tr>
+                    <td><strong>Câmera Térmica</strong></td>
+                    <td>Sensor Térmico de Alta Precisão</td>
+                    <td>Detecção automatizada de pontos quentes, focos de incêndio e intrusões</td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div>
+
+</body>
+</html>

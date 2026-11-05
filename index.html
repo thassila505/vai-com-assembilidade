@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VAI PITANGA - Centro de Comando v6.0</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        :root {
+            --primary: #2c3e50; --accent: #27ae60; --alert: #e74c3c;
+            --dark: #1a1a1a; --text: #ecf0f1; --highlight: #f1c40f;
+            --police: #2980b9; --fire: #e67e22; --offline: #7f8c8d;
+        }
+
+        body {
+            margin: 0; font-family: 'Segoe UI', sans-serif;
+            display: grid; grid-template-columns: 280px 1fr 340px;
+            height: 100vh; background-color: var(--dark); color: var(--text); overflow: hidden;
+        }
+
+        /* LOGIN */
+        #login-screen { position:fixed; top:0; left:0; width:100%; height:100%; background:radial-gradient(circle, #2c3e50, #1a1a1a); z-index:9999; display:flex; align-items:center; justify-content:center; }
+        .login-box { background:var(--primary); padding:40px; border-radius:15px; border:2px solid var(--highlight); width:320px; text-align:center; }
+        .login-box input { width:100%; padding:12px; margin-bottom:15px; border-radius:6px; border:1px solid #34495e; background:#111; color:white; box-sizing: border-box; }
+
+        /* PAINÉIS */
+        #sidebar-left, #fleet-panel { background: var(--primary); padding: 20px; border: 1px solid #34495e; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+        .brand-header { background: var(--highlight); color: #000; padding: 10px; border-radius: 6px; text-align: center; font-weight: 900; font-size: 22px; margin-bottom: 5px; }
+        
+        .status-card { background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border-left: 4px solid var(--accent); font-size: 0.8em; line-height: 1.6; }
+        
+        /* WIDGETS DRONE */
+        .panel-title { font-size: 14px; font-weight: bold; color: var(--highlight); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 5px; }
+        .drone-card { background: #111; border: 1px solid #333; border-radius: 8px; padding: 12px; margin-bottom: 12px; border-left: 4px solid var(--accent); transition: 0.3s; position: relative; }
+        .drone-card.offline { border-left-color: var(--offline); opacity: 0.5; filter: grayscale(1); }
+        .drone-card.alert-mode { border-left-color: var(--alert); background: #2c1a1a; animation: pulse-red 1.5s infinite; cursor: pointer; }
+        
+        .battery-bar { width: 100%; height: 6px; background: #333; border-radius: 3px; margin: 8px 0; overflow: hidden; }
+        .battery-fill { height: 100%; width: 100%; background: var(--accent); transition: 1s; }
+        
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 9px; color: #95a5a6; margin-top: 5px; }
+
+        /* BOTÕES */
+        .btn-action { width: 100%; padding: 10px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 11px; }
+        .btn-add { background: var(--highlight); color: #000; margin-bottom: 15px; }
+        .btn-land { background: #444; color: white; padding: 3px 6px; font-size: 8px; border-radius: 3px; }
+
+        #map-container { display: flex; flex-direction: column; height: 100%; }
+        #map { flex: 1; width: 100%; }
+        #box-ocorrencias { background: rgba(0,0,0,0.4); padding: 15px; border-radius: 10px; border: 1px solid #34495e; flex-grow: 1; }
+
+        /* MODAL ALERTA */
+        #camera-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 420px; background: #000; border: 2px solid var(--highlight); z-index: 2000; border-radius: 12px; padding: 20px; box-shadow: 0 0 100px #000; }
+
+        @keyframes pulse-red { 0%, 100% { box-shadow: 0 0 5px var(--alert); } 50% { box-shadow: 0 0 20px var(--alert); } }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <div class="login-box">
+            <div class="brand-header">VAI PITANGA</div>
+            <input type="text" id="user-input" placeholder="Usuário">
+            <input type="password" id="pass-input" placeholder="Senha">
+            <button onclick="autenticar()" class="btn-action" style="background:var(--accent); color:white;">LOGON SISTEMA</button>
+            <p id="login-error" style="color:var(--alert); font-size:10px; margin-top:10px; display:none;">Credenciais Inválidas</p>
+        </div>
+    </div>
+
+    <aside id="sidebar-left">
+        <div class="brand-header">VAI PITANGA</div>
+        
+        <div class="status-card">
+            <strong>🛰️ SISTEMA CENTRAL</strong><br>
+            Status: <span id="sys-status" style="color:var(--accent)">Operacional</span><br>
+            Células Ativas: <span id="celulas-count">04</span><br>
+            Frequência: 5.8 GHz
+        </div>
+
+        <div id="weather-card" style="background: linear-gradient(135deg, #1e3c72, #2a5298); padding: 15px; border-radius: 10px; font-size: 0.8em; border-left: 4px solid var(--highlight);">
+            <strong>CLIMA PITANGA</strong><br>
+            <span id="clima-txt">ENSOLARADO</span><br>
+            <strong style="color:var(--highlight);">🌧️ PREVISÃO: <span id="chuva-val">0.0mm</span></strong>
+        </div>
+
+        <div id="box-ocorrencias">
+            <div class="panel-title" style="font-size: 11px;">Ocorrências Recentes</div>
+            <ul id="lista-resumo" style="list-style:none; padding:0; font-size:10px;">
+                <li id="empty-msg" style="color:#7f8c8d; font-style:italic;">Aguardando detecção...</li>
+            </ul>
+        </div>
+
+        <!-- NOVO BLOCO NO FINAL DA SIDEBAR ESQUERDA -->
+<div style="margin-top:auto; display:flex; flex-direction:column; gap:8px;">
+    <button onclick="window.location.href='creditos.html'" class="btn-action" style="background:var(--highlight); color:#000; font-weight:bold;">
+        👥 EQUIPE E ESPECIFICAÇÕES
+    </button>
+    <button onclick="window.location.href='planos.html'" class="btn-action" style="background:var(--accent); color:white;">
+        💳 PLANOS E ASSINATURA
+    </button>
+</div>
+
+        </aside>
+
+    <main id="map-container">
+        <div id="map"></div>
+        <div style="height:140px; background:var(--primary); padding:10px; overflow-y:auto; font-size:0.8em; border-top:2px solid var(--highlight);">
+            <table id="tabela-logs" style="width:100%; text-align:left;">
+                <thead><tr><th>Hora</th><th>Drone</th><th>Evento</th><th>Status</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </main>
+
+    <aside id="fleet-panel">
+        <div class="panel-title">Monitoramento de Frota</div>
+        <button class="btn-action btn-add" onclick="adicionarDrone()">➕ ADICIONAR NOVO DRONE</button>
+        <div id="drone-list"></div>
+    </aside>
+
+    <div id="camera-overlay">
+    <h4 style="margin:0; color:var(--highlight); display:flex; justify-content:space-between;">
+        <span>⚠️ ALERTA DE SEGURANÇA: <span id="drone-alerta-id"></span></span>
+        <span style="color:red; font-size:10px;">AO VIVO</span>
+    </h4>
+    <div style="height:200px; background:#111; margin:15px 0; display:flex; flex-direction:column; align-items:center; justify-content:center; color:var(--highlight); border:1px solid #333; overflow:hidden; position:relative;">
+        <img id="camera-feed-img" src="" alt="Feed de Alerta" style="width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0; opacity:0.65;">
+        <div id="ia-box" style="border:1px solid var(--highlight); padding:10px; font-size:12px; position:relative; z-index:2; background:rgba(0,0,0,0.85);">ANALISANDO FRAME...</div>
+        <small style="margin-top:5px; color:#aaa; position:relative; z-index:2; background:rgba(0,0,0,0.6); padding:2px 6px; border-radius:3px;">Câmera Térmica / Sensores Ativos</small>
+    </div>
+    <div style="display:flex; gap:10px;">
+        <button onclick="despachar('Bombeiros')" class="btn-action" style="background:var(--fire); color:white;">🚒 ACIONAR BOMBEIROS</button>
+        <button onclick="despachar('Polícia')" class="btn-action" style="background:var(--police); color:white;">🚓 ACIONAR POLÍCIA</button>
+    </div>
+    <button onclick="fecharAlerta()" style="width:100%; margin-top:10px; background:none; border:1px solid #444; color:#95a5a6; cursor:pointer; font-size:10px; padding:5px;">DESCARTAR FALSO POSITIVO</button>
+</div>
+    <!-- MODAL DE INSPEÇÃO DO DRONE -->
+<div id="modal-inspecao" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); width:440px; background:#111; border:2px solid var(--highlight); border-radius:12px; padding:20px; z-index:3000; box-shadow:0 0 50px rgba(0,0,0,0.9); color:var(--text);">
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; padding-bottom:10px; margin-bottom:15px;">
+        <h3 style="margin:0; color:var(--highlight);" id="inspecao-title">🔍 INSPEÇÃO: DRONE</h3>
+        <button onclick="fecharInspecao()" style="background:none; border:none; color:#95a5a6; font-size:16px; cursor:pointer;">✖</button>
+    </div>
+    
+    <!-- FEED AO VIVO (GIF ALEATÓRIO) -->
+    <div style="width:100%; height:200px; background:#000; border:1px solid #333; border-radius:6px; overflow:hidden; position:relative; margin-bottom:15px; display:flex; align-items:center; justify-content:center;">
+        <img id="inspecao-feed" src="" alt="Feed ao vivo" style="width:100%; height:100%; object-fit:cover;">
+        <div style="position:absolute; top:10px; right:10px; background:rgba(231,76,60,0.85); color:white; font-size:9px; padding:3px 8px; border-radius:3px; font-weight:bold; letter-spacing:1px;">● TRANSMISSÃO AO VIVO</div>
+    </div>
+
+    <!-- INFORMAÇÕES DETALHADAS -->
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:11px; background:rgba(255,255,255,0.04); padding:12px; border-radius:6px; margin-bottom:15px; border:1px solid #222;">
+        <div><strong>📍 Local:</strong> <span id="inspecao-local" style="color:var(--highlight);">-</span></div>
+        <div><strong>🌐 Coordenadas:</strong> <span id="inspecao-coords" style="color:#aaa;">-</span></div>
+        <div><strong>🔋 Bateria:</strong> <span id="inspecao-bateria">-</span></div>
+        <div><strong>📡 Sinal:</strong> <span id="inspecao-sinal" style="color:var(--accent);">-</span></div>
+    </div>
+
+    <!-- AÇÕES -->
+    <div style="display:flex; gap:10px;">
+        <button id="inspecao-btn-pousar" class="btn-action" style="background:var(--alert); color:white;">🛬 POUSAR DRONE</button>
+        <button onclick="fecharInspecao()" class="btn-action" style="background:#333; color:white;">FECHAR</button>
+    </div>
+</div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const map = L.map('map').setView([-24.7572, -51.7600], 14);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+
+const locais = ["Centro", "Vila Planalto", "Vila Nova", "Jardim Europa", "Bairro Industrial"];
+
+// Banco de GIFs simulando feeds de câmera de drone
+const randomIdleGifs = ["/gifs/done_flying.gif", "/gifs/drone_aura.gif", "/gifs/drone_extreme.gif", "/gifs/evil_drone.gif"];
+const fireHazardGifs = ["/gifs/drone_fire.jpg", "/gifs/drone_fire2.jpg"];
+const theftGifs = ["/gifs/gtadrone.jpg", "/gifs/gtadrone2.gif"];
+
+let drones = [
+    { id: "VAI-01", bateria: 95, status: "ON-LINE", local: "Centro", sinal: "5G", coords: "-24.7572, -51.7600" },
+    { id: "VAI-02", bateria: 88, status: "ON-LINE", local: "Vila Nova", sinal: "Satélite", coords: "-24.7610, -51.7520" },
+    { id: "VAI-03", bateria: 92, status: "ON-LINE", local: "Planalto", sinal: "5G", coords: "-24.7490, -51.7680" },
+    { id: "VAI-04", bateria: 75, status: "ON-LINE", local: "Industrial", sinal: "Rádio", coords: "-24.7700, -51.7400" }
+];
+
+let droneEmAlerta = "";
+let droneEmInspecaoIndex = null;
+
+function autenticar() {
+    if(document.getElementById('user-input').value === "usuario" && document.getElementById('pass-input').value === "senha") {
+        document.getElementById('login-screen').style.display = 'none';
+        renderizarFrota();
+        cicloVida();
+    } else {
+        document.getElementById('login-error').style.display = 'block';
+    }
+}
+
+function renderizarFrota() {
+    const list = document.getElementById('drone-list');
+    list.innerHTML = "";
+    drones.forEach((d, index) => {
+        const off = d.status === "OFF-LINE";
+        const pousando = d.status === "POUSANDO";
+        
+        let statusCor = 'var(--accent)';
+        if (off) statusCor = 'var(--offline)';
+        if (pousando || d.status === 'ALERTA') statusCor = 'var(--alert)';
+
+        list.innerHTML += `
+            <div id="card-${d.id}" class="drone-card ${off ? 'offline' : ''} ${pousando ? 'alert-mode' : ''}" onclick="${d.status === 'ALERTA' ? 'abrirAlerta(\''+d.id+'\')' : ''}">
+                <div style="display:flex; justify-content:space-between; font-size:11px;">
+                    <strong>${d.id}</strong> 
+                    <span style="color:${statusCor}">${d.status}</span>
+                </div>
+                <div class="battery-bar">
+                    <div id="bat-fill-${d.id}" class="battery-fill" style="width:${d.bateria}%; background:${d.bateria < 20 ? 'var(--alert)' : 'var(--accent)'}"></div>
+                </div>
+                <div class="info-grid">
+                    <span>📍 ${d.local}</span>
+                    <span>📡 ${d.sinal}</span>
+                    <span>🔋 Reserva: <span id="bat-txt-${d.id}">${d.bateria.toFixed(1)}</span>%</span>
+                    ${!off && !pousando ? `<button class="btn-land" style="background:var(--highlight); color:#000; font-weight:bold;" onclick="event.stopPropagation(); abrirInspecao(${index})">🔍 INSPECIONAR</button>` : ''}
+                    ${pousando ? `<span style="color:var(--alert); font-weight:bold;">RETORNANDO...</span>` : ''}
+                    ${off ? '<span>EM SOLO</span>' : ''}
+                </div>
+            </div>
+        `;
+    });
+    document.getElementById('celulas-count').innerText = drones.filter(d => d.status !== "OFF-LINE").length.toString().padStart(2, '0');
+}
+
+function abrirInspecao(index) {
+    droneEmInspecaoIndex = index;
+    const d = drones[index];
+    
+    document.getElementById('inspecao-title').innerText = `🔍 INSPEÇÃO: ${d.id}`;
+    document.getElementById('inspecao-local').innerText = d.local;
+    document.getElementById('inspecao-coords').innerText = d.coords;
+    document.getElementById('inspecao-bateria').innerText = `${d.bateria.toFixed(1)}%`;
+    document.getElementById('inspecao-sinal').innerText = d.sinal;
+    
+    // Seleciona GIF da lista de IDLE
+    const gifAleatorio = randomIdleGifs[Math.floor(Math.random() * randomIdleGifs.length)];
+    document.getElementById('inspecao-feed').src = gifAleatorio;
+
+    const btnPousar = document.getElementById('inspecao-btn-pousar');
+    btnPousar.onclick = () => {
+        pousarDrone(index);
+        fecharInspecao();
+    };
+
+    document.getElementById('modal-inspecao').style.display = 'block';
+}
+
+function fecharInspecao() {
+    document.getElementById('modal-inspecao').style.display = 'none';
+    droneEmInspecaoIndex = null;
+}
+
+function adicionarDrone() {
+    const novoId = `VAI-0${drones.length + 1}`;
+    const lat = (-24.7572 + (Math.random() - 0.5) * 0.04).toFixed(4);
+    const lng = (-51.7600 + (Math.random() - 0.5) * 0.04).toFixed(4);
+    
+    drones.push({ 
+        id: novoId, 
+        bateria: 100, 
+        status: "ON-LINE", 
+        local: locais[Math.floor(Math.random()*locais.length)], 
+        sinal: "5G",
+        coords: `${lat}, ${lng}`
+    });
+    renderizarFrota();
+    registrarLog(novoId, "Drone Inicializado", "OK");
+}
+
+function pousarDrone(index) {
+    drones[index].status = "OFF-LINE";
+    registrarLog(drones[index].id, "Pouso Solicitado", "SOLO");
+    renderizarFrota();
+}
+
+function cicloVida() {
+    const nublado = Math.random() < 0.3;
+    document.getElementById('clima-txt').innerText = nublado ? "NUBLADO" : "ENSOLARADO";
+    document.getElementById('chuva-val').innerText = (nublado ? (Math.random()*4).toFixed(1) : "0.0") + "mm";
+
+    drones.forEach((d, index) => {
+        if(d.status !== "OFF-LINE" && d.status !== "POUSANDO") {
+            const decaimentoAleatorio = (Math.random() * 2.7 + 0.8) * (nublado ? 1.4 : 1.0);
+            d.bateria -= decaimentoAleatorio;
+            if(d.bateria < 0) d.bateria = 0;
+            
+            // Atualiza elementos no card principal
+            const fill = document.getElementById(`bat-fill-${d.id}`);
+            const txt = document.getElementById(`bat-txt-${d.id}`);
+            if(fill) {
+                fill.style.width = d.bateria + "%";
+                fill.style.background = d.bateria < 20 ? "var(--alert)" : "var(--accent)";
+            }
+            if(txt) txt.innerText = d.bateria.toFixed(1);
+
+            // Atualiza a bateria no modal de inspeção se ele estiver aberto para este drone
+            if(droneEmInspecaoIndex === index) {
+                document.getElementById('inspecao-bateria').innerText = `${d.bateria.toFixed(1)}%`;
+            }
+
+            // Pouso automático de emergência
+            if(d.bateria <= 18) {
+                iniciarPousoEmergencia(d, index);
+            }
+        }
+    });
+
+    if(Math.random() < 0.1) {
+        const disponivel = drones.find(d => d.status === "ON-LINE");
+        if(disponivel) dispararAlerta(disponivel);
+    }
+    setTimeout(cicloVida, 3000);
+}
+
+function iniciarPousoEmergencia(drone, index) {
+    drone.status = "POUSANDO";
+    if (droneEmInspecaoIndex === index) fecharInspecao();
+    renderizarFrota();
+    
+    registrarLog(drone.id, "Bateria Baixa (<18%)", "RETORNO AUTOMÁTICO");
+    
+    const lista = document.getElementById('lista-resumo');
+    document.getElementById('empty-msg').style.display = 'none';
+    const item = document.createElement('li');
+    item.style.borderBottom = "1px solid #333";
+    item.style.padding = "5px 0";
+    item.innerHTML = `<b style="color:var(--alert)">🪫 BATERIA CRÍTICA: ${drone.id}</b><br><small>${drone.local} - Pouso automático iniciado (${drone.bateria.toFixed(1)}%)</small>`;
+    lista.prepend(item);
+
+    setTimeout(() => {
+        drones[index].status = "OFF-LINE";
+        registrarLog(drone.id, "Pouso de Emergência Concluído", "SOLO");
+        renderizarFrota();
+    }, 5000);
+}
+
+function dispararAlerta(drone) {
+    drone.status = "ALERTA";
+    drone.tipoAlerta = Math.random() < 0.5 ? "fire" : "theft"; // Sorteia o estado do alerta
+    droneEmAlerta = drone.id;
+    renderizarFrota();
+    
+    const lista = document.getElementById('lista-resumo');
+    document.getElementById('empty-msg').style.display = 'none';
+    
+    const item = document.createElement('li');
+    item.id = `resumo-${drone.id}`;
+    item.style.borderBottom = "1px solid #333";
+    item.style.padding = "5px 0";
+    
+    const icone = drone.tipoAlerta === 'fire' ? '🔥' : '🚨';
+    const rotulo = drone.tipoAlerta === 'fire' ? 'INCÊNDIO' : 'SUSPEITA DE FURTO';
+    
+    item.innerHTML = `<b style="color:var(--alert)">${icone} ${rotulo}: ${drone.id}</b><br><small>${drone.local} - Clique para abrir</small>`;
+    item.style.cursor = "pointer";
+    item.onclick = () => abrirAlerta(drone.id);
+    lista.prepend(item);
+}
+
+function abrirAlerta(id) {
+    droneEmAlerta = id;
+    const d = drones.find(item => item.id === id);
+    if (!d) return;
+
+    document.getElementById('drone-alerta-id').innerText = id;
+    const imgFeed = document.getElementById('camera-feed-img');
+    const iaBox = document.getElementById('ia-box');
+
+    if (d.tipoAlerta === 'theft') {
+        const imagem = theftGifs[Math.floor(Math.random() * theftGifs.length)];
+        imgFeed.src = imagem;
+        iaBox.innerText = `DETECÇÃO DE INVASÃO / FURTO EM ${d.local.toUpperCase()}`;
+    } else {
+        const imagem = fireHazardGifs[Math.floor(Math.random() * fireHazardGifs.length)];
+        imgFeed.src = imagem;
+        iaBox.innerText = `SUSPEITA DE INCÊNDIO EM ${d.local.toUpperCase()}`;
+    }
+
+    document.getElementById('camera-overlay').style.display = 'block';
+}
+
+function fecharAlerta() {
+    document.getElementById('camera-overlay').style.display = 'none';
+    const d = drones.find(d => d.id === droneEmAlerta);
+    if(d && d.status === "ALERTA") d.status = "ON-LINE";
+    renderizarFrota();
+}
+
+function despachar(orgao) {
+    registrarLog(droneEmAlerta, "Despacho: " + orgao, "EM CURSO");
+    const resumo = document.getElementById(`resumo-${droneEmAlerta}`);
+    if(resumo) {
+        resumo.innerHTML = `<b style="color:var(--accent)">✅ RESOLVIDO: ${orgao}</b><br><small>${droneEmAlerta} em base.</small>`;
+        resumo.onclick = null;
+    }
+    fecharAlerta();
+}
+
+function registrarLog(id, acao, status) {
+    const tbody = document.querySelector('#tabela-logs tbody');
+    const row = tbody.insertRow(0);
+    row.innerHTML = `<td>${new Date().toLocaleTimeString().slice(0,5)}</td><td>${id}</td><td>${acao}</td><td>${status}</td>`;
+}
+    </script>
+        
+</body>

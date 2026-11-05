@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <script>
+        if (sessionStorage.getItem('authenticated') !== 'true') {
+            window.location.href = 'login.html';
+        }
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VAI PITANGA - Planos e Assinatura</title>
+    <style>
+        :root {
+            --primary: #2c3e50; 
+            --accent: #27ae60; 
+            --alert: #e74c3c;
+            --dark: #1a1a1a; 
+            --text: #ecf0f1; 
+            --highlight: #f1c40f;
+            --card-bg: #222d38;
+            --border: #34495e;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--dark);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* HEADER / NAV */
+        header {
+            background-color: var(--primary);
+            border-bottom: 2px solid var(--highlight);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand-header {
+            background: var(--highlight);
+            color: #000;
+            padding: 6px 16px;
+            border-radius: 6px;
+            font-weight: 900;
+            font-size: 20px;
+            letter-spacing: 1px;
+            display: inline-block;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: 1px solid var(--highlight);
+            color: var(--highlight);
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 13px;
+            text-decoration: none;
+            transition: 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-btn:hover {
+            background: var(--highlight);
+            color: #000;
+        }
+
+        /* CONTAINER PRINCIPAL */
+        .main-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px;
+            width: 100%;
+        }
+
+        /* CARD DE STATUS DA ASSINATURA */
+        .user-status-card {
+            background: linear-gradient(135deg, #1e3c72, var(--primary));
+            border-left: 6px solid var(--accent);
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 35px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+        }
+
+        .status-item h4 {
+            margin: 0 0 5px 0;
+            font-size: 11px;
+            color: #bdc3c7;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .status-item p {
+            margin: 0;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .badge-active {
+            background: var(--accent);
+            color: #fff;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            display: inline-block;
+        }
+
+        /* TÍTULOS DE SEÇÃO */
+        .section-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--highlight);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+        }
+
+        /* NAVEGAÇÃO DE ABAS PARA CATEGORIAS DE PLANOS */
+        .category-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            background: var(--primary);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .tab-btn.active, .tab-btn:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        /* GRID DE PLANOS */
+        .plans-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .plan-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .plan-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+            border-color: var(--highlight);
+        }
+
+        .plan-card.featured {
+            border: 2px solid var(--highlight);
+        }
+
+        .featured-tag {
+            position: absolute;
+            top: -12px;
+            right: 20px;
+            background: var(--highlight);
+            color: #000;
+            font-weight: 900;
+            font-size: 10px;
+            padding: 4px 10px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        .plan-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .plan-price {
+            font-size: 28px;
+            font-weight: bold;
+            color: var(--highlight);
+            margin-bottom: 20px;
+        }
+
+        .plan-price span {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+
+        .plan-features {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 25px 0;
+            font-size: 13px;
+            line-height: 2;
+        }
+
+        .plan-features li {
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-select {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            background: var(--accent);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+
+        .btn-select:hover {
+            opacity: 0.9;
+        }
+
+        .btn-current {
+            background: #444;
+            color: #aaa;
+            cursor: default;
+        }
+
+        /* INFORMAÇÕES DE PAGAMENTO */
+        .payment-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+        }
+
+        @media (max-width: 768px) {
+            .payment-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .payment-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .payment-method {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(0,0,0,0.3);
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            font-size: 13px;
+        }
+
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        .invoice-table th, .invoice-table td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .invoice-table th {
+            color: #7f8c8d;
+        }
+
+        .category-group {
+            display: none;
+        }
+
+        .category-group.active {
+            display: grid;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="brand-header">VAI PITANGA</div>
+        <a href="index.html" class="nav-btn">
+            ⬅ CENTRO DE COMANDO
+        </a>
+    </header>
+
+    <div class="main-container">
+
+        <!-- STATUS DA ASSINATURA DO USUÁRIO -->
+        <div class="section-title">Sua Assinatura Atual</div>
+        <div class="user-status-card">
+            <div class="status-item">
+                <h4>Plano Ativo</h4>
+                <p style="color: var(--highlight);">Área Rural - Plus</p>
+            </div>
+            <div class="status-item">
+                <h4>Status</h4>
+                <p><span class="badge-active">● ATIVO</span></p>
+            </div>
+            <div class="status-item">
+                <h4>Renovação Em</h4>
+                <p>15/12/2026</p>
+            </div>
+            <div class="status-item">
+                <h4>Valor Mensal</h4>
+                <p>R$ 3.900,00</p>
+            </div>
+        </div>
+
+        <!-- SELEÇÃO DE PLANOS -->
+        <div class="section-title">Planos Disponíveis</div>
+
+        <!-- BOTOES DE CATEGORIA -->
+        <div class="category-tabs">
+            <button class="tab-btn active" onclick="mostrarCategoria('rural')">🌾 Área Rural</button>
+            <button class="tab-btn" onclick="mostrarCategoria('municipio')">🏙️ Município Inteiro</button>
+            <button class="tab-btn" onclick="mostrarCategoria('privada')">🏢 Área Privada</button>
+        </div>
+
+        <!-- PLANOS: ÁREA RURAL -->
+        <div id="cat-rural" class="plans-grid category-group active">
+            <div class="plan-card">
+                <div>
+                    <div class="plan-name">Rural Básico</div>
+                    <div class="plan-price">R$ 2.900 <span>/mês</span></div>
+                    <ul class="plan-features">
+                        <li>📐 Área: até 1.000.000 m²</li>
+                        <li>🚁 2 Drones à disposição</li>
+                        <li>📡 Conexão Telemetria 5G</li>
+                        <li>🚨 Alertas térmicos automáticos</li>
+                    </ul>
+                </div>
+                <button class="btn-select" onclick="selecionarPlano('Rural Básico')">Migrar para este Plano</button>
+            </div>
+
+            <div class="plan-card featured">
+                <div class="featured-tag">Plano Atual</div>
+                <div>
+                    <div class="plan-name">Rural Plus</div>
+                    <div class="plan-price">R$ 3.900 <span>/mês</span></div>
+                    <ul class="plan-features">
+                        <li>📐 Área: até 2.000.000 m²</li>
+                        <li>🚁 3 Drones à disposição</li>
+                        <li>📡 Conexão Híbrida (5G / Satélite)</li>
+                        <li>🚨 Alertas térmicos e IA preditiva</li>
+                    </ul>
+                </div>
+                <button class="btn-select btn-current" disabled>Plano em Uso</button>
+            </div>
+
+            <div class="plan-card">
+                <div>
+                    <div class="plan-name">Rural Premium</div>
+                    <div class="plan-price">R$ 5.500 <span>/mês</span></div>
+                    <ul class="plan-features">
+                        <li>📐 Área: até 5.000.000 m²</li>
+                        <li>🚁 4 Drones à disposição</li>
+                        <li>📡 Link de Rádio + Satélite dedicado</li>
+                        <li>🚨 Suporte e despacho priorizado 24/7</li>
+                    </ul>
+                </div>
+                <button class="btn-select" onclick="selecionarPlano('Rural Premium')">Migrar para este Plano</button>
+            </div>
+        </div>
+
+        <!-- PLANOS: MUNICÍPIO INTEIRO -->
+        <div id="cat-municipio" class="plans-grid category-group">
+            <div class="plan-card">
+                <div>
+                    <div class="plan-name">Município Essencial</div>
+                    <div class="plan-price">R$ 39.900 <span>/mês</span></div>
+                    <ul class="plan-features">
+                        <li>🏙️ Cobertura Municipal Urbana</li>
+                        <li>🚁 16 Drones à disposição</li>
+                        <li>🏛️ Acesso multi-usuário para central</li>
+                        <li>🚨 Integração com Bombeiros/Polícia</li>
+                    </ul>
+                </div>
+                <button class="btn-select" onclick="selecionarPlano('Município Essencial')">Contratar Plano</button>
+            </div>
+
+            <div class="plan-card featured">
+                <div class="featured-tag">Recomendado</div>
+                <div>
+                    <div class="plan-name">Município Completo</div>
+                    <div class="plan-price">R$ 54.900 <span>/mês</span></div>
+                    <ul class="plan-features">
+                        <li>🏙️ Cobertura Urbana + Periurbana</li>
+                        <li>🚁 24 Drones à disposição</li>
+                        <li>🏛️ Central com relatórios de IA diários</li>
+                        <li>🚨 Integração prioritária com órgãos estaduais</li>
+                    </ul>
+                </div>
+                <button class="btn-select" onclick="selecionarPlano('Município Completo')">Contratar Plano</button>
+            </div>
+
+            <div class="plan-card">
+                <div>
+                    <div class="plan-name">Município Avançado</div>
+                    <div class="plan-price">R$ 69.900 <span>/mês</span></div>
+                    <ul class="plan-features">
+                        <li>🏙️ Cobertura Total Territorial</li>
+                        <li>🚁 32 Drones à disposição</li>
+                        <li>🏛️ Relatórios de inteligência urbana em tempo real</li>
+                        <li>🚨 Suporte VIP + Manutenção contínua de frota</li>
+                    </ul>
+                </div>
+                <button class="btn-select" onclick="selecionarPlano('Município Avançado')">Contratar Plano</button>
+            </div>
+        </div>
+
+        <!-- PLANOS: ÁREA PRIVADA -->
+        <div id="cat-privada" class="plans-grid category-group">
+            <div class="plan-card">
+                <div>
+                    <div class="plan-name">Privado Básico</div>
+                    <div class="plan-price">R$ 390 <span>/mês</span></div>
+                    <ul class="plan-features">
+                        <li>📐 Área: até 50.000 m²</li>
+                        <li>🚁 2 Drones à disposição</li>
+                        <li>📹 Transmissão Full HD ao vivo</li>
+                        <li>🚨 Notificações no celular/Web</li>
+                    </ul>
+                </div>
+                <button class="btn-select" onclick="selecionarPlano('Privado Básico')">Contratar Plano</button>
+            </div>
+
+            <div class="plan-card">
+                <div>
+                    <div class="plan-name">Privado Plus</div>
+                    <div class="plan-price">R$ 690 <span>/mês</span></div>
+                    <ul class="plan-features">
+                        <li>📐 Área: até 100.000 m²</li>
+                        <li>🚁 3 Drones à disposição</li>
+                        <li>📹 Transmissão Térmica + HD</li>
+                        <li>🚨 Gravação contínua em nuvem</li>
+                    </ul>
+                </div>
+                <button class="btn-select" onclick="selecionarPlano('Privado Plus')">Contratar Plano</button>
+            </div>
+
+            <div class="plan-card">
+                <div>
+                    <div class="plan-name">Privado Premium</div>
+                    <div class="plan-price">R$ 990 <span>/mês</span></div>
+                    <ul class="plan-features">
+                        <li>📐 Área: até 200.000 m²</li>
+                        <li>🚁 4 Drones à disposição</li>
+                        <li>📹 Visão Noturna Infravermelha + IA</li>
+                        <li>🚨 Patrulhamento autônomo agendado</li>
+                    </ul>
+                </div>
+                <button class="btn-select" onclick="selecionarPlano('Privado Premium')">Contratar Plano</button>
+            </div>
+        </div>
+
+        <!-- SEÇÃO DE PAGAMENTO E HISTÓRICO -->
+        <div class="section-title">Informações Financeiras</div>
+        <div class="payment-section">
+            <div class="payment-card">
+                <strong style="color:var(--highlight); font-size: 14px;">💳 FORMA DE PAGAMENTO CADASTRADA</strong>
+                <div class="payment-method">
+                    <span>Cartão de Crédito (Mastercard) **** 4821</span>
+                    <span style="color: var(--accent); font-weight: bold;">PADRÃO</span>
+                </div>
+                <div class="payment-method">
+                    <span>PIX Automático Cadastrado</span>
+                    <span style="color: #7f8c8d;">SECUNDÁRIO</span>
+                </div>
+                <button class="btn-select" style="margin-top: 15px; background: #34495e;" onclick="alert('Modal fictício para alteração de cartão/PIX.')">Alterar Dados de Pagamento</button>
+            </div>
+
+            <div class="payment-card">
+                <strong style="color:var(--highlight); font-size: 14px;">📄 HISTÓRICO DE FATURAS</strong>
+                <table class="invoice-table">
+                    <thead>
+                        <tr>
+                            <th>Data</th>
+                            <th>Descrição</th>
+                            <th>Valor</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>15/11/2026</td>
+                            <td>Plano Rural Plus</td>
+                            <td>R$ 3.900,00</td>
+                            <td style="color: var(--accent);">PAGO</td>
+                        </tr>
+                        <tr>
+                            <td>15/10/2026</td>
+                            <td>Plano Rural Plus</td>
+                            <td>R$ 3.900,00</td>
+                            <td style="color: var(--accent);">PAGO</td>
+                        </tr>
+                        <tr>
+                            <td>15/09/2026</td>
+                            <td>Plano Rural Plus</td>
+                            <td>R$ 3.900,00</td>
+                            <td style="color: var(--accent);">PAGO</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function mostrarCategoria(cat) {
+            // Remove classe active de todos os botões e grupos
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.category-group').forEach(group => group.classList.remove('active'));
+
+            // Adiciona no selecionado
+            if (cat === 'rural') {
+                document.getElementById('cat-rural').classList.add('active');
+                event.target.classList.add('active');
+            } else if (cat === 'municipio') {
+                document.getElementById('cat-municipio').classList.add('active');
+                event.target.classList.add('active');
+            } else if (cat === 'privada') {
+                document.getElementById('cat-privada').classList.add('active');
+                event.target.classList.add('active');
+            }
+        }
+
+        function selecionarPlano(nomePlano) {
+            alert("Solicitação de alteração para o plano '" + nomePlano + "' enviada com sucesso! (Simulação)");
+        }
+    </script>
+</body>
+</html>
